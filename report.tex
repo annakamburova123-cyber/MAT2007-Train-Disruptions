@@ -1,0 +1,89 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{1.2ex}{0.6ex}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{subcaption}
+
+\title{\textbf{Winter Is Coming\ldots{} But Is the Train?}\\[2pt]
+\large Seasonal patterns in Dutch train disruptions, 2022--2025}
+\author{Anna Kamburova (i6395770)}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+
+\section*{Introduction}
+Train disruptions have become an increasingly familiar part of travelling in the Netherlands, and winter is often assumed to be the worst season because of snow, ice and storms. This report aims to answer the following:
+\textbf{Are train disruptions in the Netherlands worse in some seasons than in others?}
+``Worse'' is measured in two ways: how \emph{often} disruptions occur, and the \emph{length} of said disruptions.
+
+\section*{Data sample}
+The data comes from the open disruptions archive of Rijden de Treinen~\cite{rdt}, which records every disruption announced to travellers through NS travel information, including regional lines run by other operators, such as Arriva. A disruption is generally announced only when several trains are affected, so the data describe significant network problems rather than small individual delays. The years being analysed are 2022--2025 as NS changed its reporting system in 2017, making earlier counts incomparable, and 2020--2021 had reduced travel due to Covid-19. The relevant columns are:
+\begin{itemize}\setlength\itemsep{0pt}
+  \item \texttt{rdt\_id}: unique identifier of each disruption
+  \item \texttt{start\_time}: date and time the disruption began
+  \item \texttt{duration\_minutes}: duration of the disruption
+  \item \texttt{cause\_en}: the stated cause, in English
+\end{itemize}
+As for cleaning the data, duplicate identifiers and rows without a valid start time were removed, leaving $23\,307$ disruptions. Each disruption was assigned to a meteorological season (winter: December--February, and so on) by its start time.
+
+\section*{Method}
+The analysis was written in Python using \texttt{pandas}, \texttt{NumPy}, and \texttt{matplotlib}, and developed in VS Code. Because the seasons contain different numbers of days (winter 361, spring 368, summer 368, autumn 364 over the four years), all results are expressed per day. For a season with $N$ disruptions over $D$ days, the rate and its Poisson uncertainty are
+\begin{equation}
+  r = \frac{N}{D}, \qquad \sigma_r = \frac{\sqrt{N}}{D}.
+\end{equation}
+For the total disruption time $H=\sum_i d_i$, where $d_i$ is the duration of disruption $i$, each event is weighted by its size: $\sigma_H = \sqrt{\sum_i d_i^2}$. Two seasons are compared through their difference $\Delta$ and its uncertainty, assuming the two are independent:
+\begin{equation}
+  \sigma_\Delta = \sqrt{\sigma_1^2 + \sigma_2^2}, \qquad \text{significance} = \Delta/\sigma_\Delta .
+\end{equation}
+
+\section*{Results and discussion}
+Figure~\ref{fig:freq} shows that disruptions occur at almost the same rate in every season. The highest rate is in autumn and the lowest in spring:
+\[
+  r_{\text{autumn}} = 16.54 \pm 0.21, \quad r_{\text{spring}} = 15.59 \pm 0.21, \quad \Delta r = 0.95 \pm 0.30 \ \text{disruptions per day} \ (3.2\sigma).
+\]
+The difference is statistically significant but small, about 6\%. Winter ($15.69\pm0.21$) is the second lowest.
+
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}[t]{0.42\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{disruptions_per_season.png}
+    \caption{Disruptions per day.}
+    \label{fig:freq}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.47\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{duration_distribution.png}
+    \caption{Distribution of durations (log scale).}
+    \label{fig:dist}
+  \end{subfigure}
+  \caption{(a) Disruptions per day by season, with $\pm1\sigma$ error bars. (b) Box plots of disruption durations: the white line is the median, the box spans the middle 50\%, and dots mark unusually long disruptions.}
+\end{figure}
+
+Figure~\ref{fig:dist} shows the durations. The median disruption lasts between 49 and 55 minutes in every season, and the middle half of disruptions lasts from about 20 minutes to 3 hours. The distribution is strongly right-skewed: the mean duration (2.7--3.8~h) is three to four times the median, pulled up by a small number of events lasting weeks, most of which are in winter.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.5\textwidth]{duration_comparison.png}
+  \caption{Hours of disruption per day by season, for all disruptions (grey) and for disruptions of at most 24~h (blue), with $\pm1\sigma$ error bars.}
+  \label{fig:comp}
+\end{figure}
+
+These long events dominate the total disruption time (Figure~\ref{fig:comp}, grey). Winter has the most disruption time, around $60.4\pm4.9$ hours per day compared to $44.6\pm2.4$ in autumn, a difference of $15.8\pm5.4$ hours per day ($2.9\sigma$). The ten longest winter disruptions, mainly month-long rolling-stock shortages and an Arriva staff strike in February 2023, make up for 22\% of all winter disruption time. Excluding disruptions longer than 24~h, applied equally to all seasons, winter falls to $33.0\pm0.9$ hours per day and its excess disappears (Figure~\ref{fig:comp}, blue).
+
+\paragraph{Limitations.} The $\sqrt{N}$ uncertainties assume independent events, whereas a single storm or strike causes many disruptions at once. The true uncertainties are therefore somewhat larger. Since the conclusion is that the seasons differ little, larger uncertainties would not change it much.
+
+\section*{Conclusion}
+The season barely matters for a typical traveller. Disruptions are about equally frequent in every season, and a typical disruption lasts just under an hour throughout the year. Winter's higher total disruption time comes from a few rare, long-lasting events such as rolling-stock shortages and a strike, not from the season itself.
+
+\begin{thebibliography}{9}\setlength\itemsep{0pt}
+\bibitem{rdt} Rijden de Treinen. \emph{Open data: disruptions} (CC BY 4.0). \url{https://www.rijdendetreinen.nl/en/open-data/disruptions} (accessed October 2026).
+\end{thebibliography}
+
+\end{document}
